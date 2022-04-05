@@ -58,6 +58,15 @@ class Foo {
       `,
       options: [{ ignoreReadonlyClassProperties: true }],
     },
+    {
+      code: `
+type A = Parameters<typeof AA>[1];
+function foo(a: Parameters<typeof AA>[1]) {}
+type B = Parameters<typeof B>[1];
+function bar(b: Parameters<typeof BB>[1]) {}
+      `,
+      options: [{ ignoreTypeIndexes: true }],
+    },
   ],
 
   invalid: [
@@ -265,6 +274,49 @@ class Foo {
           },
           line: 9,
           column: 24,
+        },
+      ],
+    },
+    {
+      code: `
+        type A = Parameters<typeof AA>[1];
+        function foo(a: Parameters<typeof AA>[2]) {}
+        type B = ReturnType<typeof BB>[1];
+        function bar(b: ReturnType<typeof BB>[2]) {}
+      `,
+      options: [{ ignoreTypeIndexes: false }],
+      errors: [
+        {
+          messageId: 'noMagic',
+          data: {
+            raw: '1',
+          },
+          line: 2,
+          column: 40,
+        },
+        {
+          messageId: 'noMagic',
+          data: {
+            raw: '2',
+          },
+          line: 3,
+          column: 47,
+        },
+        {
+          messageId: 'noMagic',
+          data: {
+            raw: '1',
+          },
+          line: 4,
+          column: 40,
+        },
+        {
+          messageId: 'noMagic',
+          data: {
+            raw: '2',
+          },
+          line: 5,
+          column: 47,
         },
       ],
     },

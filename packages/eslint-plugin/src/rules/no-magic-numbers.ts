@@ -24,6 +24,9 @@ const schema = util.deepMerge(
       ignoreReadonlyClassProperties: {
         type: 'boolean',
       },
+      ignoreTypeIndexes: {
+        type: 'boolean',
+      },
     },
   },
 );
@@ -49,6 +52,7 @@ export default util.createRule<Options, MessageIds>({
       ignoreNumericLiteralTypes: false,
       ignoreEnums: false,
       ignoreReadonlyClassProperties: false,
+      ignoreTypeIndexes: false,
     },
   ],
   create(context, [options]) {
@@ -102,6 +106,24 @@ export default util.createRule<Options, MessageIds>({
           return;
         }
 
+        if (
+          (typeof node.value === 'number' || typeof node.value === 'bigint') &&
+          isParentTSLiteralType(node) &&
+          isGrandparentTSIndexedAccessType(node)
+        ) {
+          if (options.ignoreTypeIndexes) {
+            return;
+          }
+
+          context.report({
+            messageId: 'noMagic',
+            node,
+            data: { raw: node.raw },
+          });
+
+          return;
+        }
+
         // Let the base rule deal with the rest
         rules.Literal(node);
       },
@@ -145,6 +167,16 @@ function isGrandparentTSUnionType(node: TSESTree.Node): boolean {
   }
 
   return false;
+}
+
+/**
+ * Checks if the node grandparent is a Typescript indexed access type
+ * @param node the node to be validated.
+ * @returns true if the node grandparent is a Typescript indexed access type
+ * @private
+ */
+function isGrandparentTSIndexedAccessType(node: TSESTree.Node): boolean {
+  return node.parent?.parent?.type === AST_NODE_TYPES.TSIndexedAccessType;
 }
 
 /**
